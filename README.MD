@@ -309,33 +309,6 @@ The application will open automatically in your browser.
 
 ---
 
-# 📷 Dashboard Preview
-
-> *Add screenshots of your Streamlit dashboard here.*
-
-Example:
-
-```
-images/
-├── dashboard.png
-├── prediction.png
-└── shap_summary.png
-```
-
----
-
-# 📌 Future Improvements
-
-- Deep Learning models
-- Customer segmentation
-- Model monitoring
-- Cloud deployment
-- REST API integration
-- Automated retraining pipeline
-- Feature drift detection
-
----
-
 # 📚 Libraries Used
 
 ```text
@@ -364,7 +337,6 @@ Mathematics Graduate | Data Scientist | Machine Learning Engineer
 - Python
 - SQL
 - Machine Learning
-- Deep Learning
 - Data Analytics
 - Explainable AI (SHAP)
 - Streamlit
