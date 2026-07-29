@@ -7,7 +7,7 @@ import shap
 import streamlit as st
 
 # ----------------------------------------------------------------------------
-# KONFIGURASI HALAMAN
+# PAGE CONFIGURATION
 # ----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Bank Customer Churn Dashboard",
@@ -21,15 +21,15 @@ DATA_PATH = "data/cleaned_engineered_churn.csv"
 
 
 # ----------------------------------------------------------------------------
-# LOAD ARTEFAK (MODEL & DATA)
+# LOAD ARTIFACTS (MODEL & DATA)
 # ----------------------------------------------------------------------------
-@st.cache_resource(show_spinner="Memuat model...")
+@st.cache_resource(show_spinner="Loading model...")
 def load_model_bundle(path: str):
     bundle = joblib.load(path)
     return bundle
 
 
-@st.cache_data(show_spinner="Memuat dataset...")
+@st.cache_data(show_spinner="Loading dataset...")
 def load_data(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     return df
@@ -39,8 +39,8 @@ try:
     bundle = load_model_bundle(MODEL_PATH)
 except FileNotFoundError:
     st.error(
-        f"File model '{MODEL_PATH}' tidak ditemukan. "
-        "Jalankan notebook pelatihan terlebih dahulu untuk menghasilkan artefak ini."
+        f"Model file '{MODEL_PATH}' not found. "
+        "Run the training notebook first to generate this artifact."
     )
     st.stop()
 
@@ -48,8 +48,8 @@ try:
     df = load_data(DATA_PATH)
 except FileNotFoundError:
     st.error(
-        f"File data '{DATA_PATH}' tidak ditemukan. "
-        "Pastikan path menuju `cleaned_engineered_churn.csv` sudah benar."
+        f"Data file '{DATA_PATH}' not found. "
+        "Make sure the path to `cleaned_engineered_churn.csv` is correct."
     )
     st.stop()
 
@@ -86,18 +86,18 @@ else:
     categorical_features = FALLBACK_CATEGORICAL_FEATURES
     model_name = type(pipeline.named_steps.get("clf", pipeline)).__name__
     st.sidebar.info(
-        "⚠️ `churn_model.pkl` disimpan tanpa metadata (bukan dict bundle). "
-        "Menggunakan daftar fitur default — pastikan urutan sesuai notebook."
+        "⚠️ `churn_model.pkl` saved without metadata (not a dict bundle). "
+        "Using default feature list — ensure order matches the notebook."
     )
 
 all_features = numeric_features + categorical_features
 
 
 # ----------------------------------------------------------------------------
-# HELPER: FEATURE ENGINEERING (harus konsisten dengan notebook)
+# HELPER: FEATURE ENGINEERING (must be consistent with the notebook)
 # ----------------------------------------------------------------------------
 def engineer_features(raw: dict) -> pd.DataFrame:
-    """Replikasi persis logika feature engineering di notebook untuk 1 baris input baru."""
+    """Exact replication of notebook feature engineering logic for 1 new input row."""
     d = dict(raw)
 
     d["ZeroBalanceFlag"] = int(d["balance"] == 0)
@@ -144,9 +144,9 @@ def engineer_features(raw: dict) -> pd.DataFrame:
     return pd.DataFrame([d])
 
 
-@st.cache_resource(show_spinner="Menyiapkan SHAP explainer...")
+@st.cache_resource(show_spinner="Setting up SHAP explainer...")
 def get_explainer(_pipeline, _df: pd.DataFrame):
-    """Bangun SHAP explainer generik (mendukung tree-based & linear model)."""
+    """Build generic SHAP explainer (supports tree-based & linear models)."""
     prep = _pipeline.named_steps["prep"]
     clf = _pipeline.named_steps["clf"]
 
@@ -168,7 +168,7 @@ def get_explainer(_pipeline, _df: pd.DataFrame):
 
 
 def compute_shap_contribution(pipeline, explainer, X_input: pd.DataFrame) -> pd.DataFrame:
-    """Hitung kontribusi SHAP untuk satu baris input dan kembalikan sbg DataFrame rapi."""
+    """Compute SHAP contributions for a single input row and return as a clean DataFrame."""
     prep = pipeline.named_steps["prep"]
     X_transformed = prep.transform(X_input[all_features])
     if hasattr(X_transformed, "toarray"):
@@ -190,12 +190,12 @@ def compute_shap_contribution(pipeline, explainer, X_input: pd.DataFrame) -> pd.
 
 
 # ----------------------------------------------------------------------------
-# SIDEBAR — FILTER INTERAKTIF
+# SIDEBAR — INTERACTIVE FILTERS
 # ----------------------------------------------------------------------------
 st.sidebar.title("🏦 Churn Dashboard")
-st.sidebar.markdown(f"**Model aktif:** `{model_name}`")
+st.sidebar.markdown(f"**Active model:** `{model_name}`")
 st.sidebar.divider()
-st.sidebar.header("🔍 Filter Data (Tab Overview)")
+st.sidebar.header("🔍 Data Filters (Overview Tab)")
 
 countries = sorted(df["country"].unique().tolist())
 genders = sorted(df["gender"].unique().tolist())
@@ -204,10 +204,10 @@ f_country = st.sidebar.multiselect("Country", options=countries, default=countri
 f_gender = st.sidebar.multiselect("Gender", options=genders, default=genders)
 
 age_min, age_max = int(df["age"].min()), int(df["age"].max())
-f_age = st.sidebar.slider("Rentang Usia", age_min, age_max, (age_min, age_max))
+f_age = st.sidebar.slider("Age Range", age_min, age_max, (age_min, age_max))
 
 f_active = st.sidebar.multiselect(
-    "Status Keaktifan",
+    "Activity Status",
     options=[1, 0],
     format_func=lambda x: "Active Member" if x == 1 else "Non-Active Member",
     default=[1, 0],
@@ -220,27 +220,27 @@ filtered_df = df[
     & df["active_member"].isin(f_active)
 ].copy()
 
-st.sidebar.caption(f"{len(filtered_df):,} dari {len(df):,} nasabah ditampilkan.")
+st.sidebar.caption(f"{len(filtered_df):,} of {len(df):,} customers displayed.")
 
 
 # ----------------------------------------------------------------------------
 # HEADER
 # ----------------------------------------------------------------------------
-st.title("🏦 Bank Customer Churn — Dashboard & Prediksi")
+st.title("🏦 Bank Customer Churn — Dashboard & Prediction")
 st.caption(
-    "Dashboard interaktif untuk memahami pendorong churn nasabah dan memprediksi "
-    "risiko churn untuk nasabah baru menggunakan model Machine Learning."
+    "Interactive dashboard to understand customer churn drivers and predict "
+    "churn risk for new customers using Machine Learning models."
 )
 
-tab1, tab2 = st.tabs(["📊 Overview & Metrik Bisnis", "🔮 Prediksi Nasabah & SHAP"])
+tab1, tab2 = st.tabs(["📊 Overview & Business Metrics", "🔮 Customer Prediction & SHAP"])
 
 
 # ============================================================================
-# TAB 1 — OVERVIEW & METRIK BISNIS
+# TAB 1 — OVERVIEW & BUSINESS METRICS
 # ============================================================================
 with tab1:
     if filtered_df.empty:
-        st.warning("Tidak ada data yang cocok dengan filter yang dipilih.")
+        st.warning("No data matches the selected filters.")
     else:
         total_customers = len(filtered_df)
         churn_rate = filtered_df["churn"].mean()
@@ -248,17 +248,17 @@ with tab1:
         avg_products = filtered_df["products_number"].mean()
 
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total Nasabah", f"{total_customers:,}")
+        c1.metric("Total Customers", f"{total_customers:,}")
         c2.metric("Churn Rate", f"{churn_rate:.1%}")
-        c3.metric("Rata-rata Saldo", f"${avg_balance:,.0f}")
-        c4.metric("Rata-rata Jumlah Produk", f"{avg_products:.2f}")
+        c3.metric("Average Balance", f"${avg_balance:,.0f}")
+        c4.metric("Average Number of Products", f"{avg_products:.2f}")
 
         st.divider()
 
         col1, col2 = st.columns(2)
 
         with col1:
-            st.subheader("Distribusi Usia vs Churn")
+            st.subheader("Age Distribution vs Churn")
             fig_age = px.histogram(
                 filtered_df,
                 x="age",
@@ -266,13 +266,13 @@ with tab1:
                 nbins=30,
                 barmode="overlay",
                 color_discrete_map={"Non-Churn": "#2F5496", "Churn": "#C00000"},
-                labels={"age": "Usia", "color": "Status"},
+                labels={"age": "Age", "color": "Status"},
             )
             fig_age.update_layout(legend_title_text="Status")
             st.plotly_chart(fig_age, use_container_width=True)
 
         with col2:
-            st.subheader("Churn Rate per Jumlah Produk")
+            st.subheader("Churn Rate by Number of Products")
             prod_churn = (
                 filtered_df.groupby("products_number")["churn"]
                 .mean()
@@ -286,7 +286,7 @@ with tab1:
                 text_auto=".1%",
                 color="churn_rate",
                 color_continuous_scale="Reds",
-                labels={"products_number": "Jumlah Produk", "churn_rate": "Churn Rate"},
+                labels={"products_number": "Number of Products", "churn_rate": "Churn Rate"},
             )
             fig_prod.update_layout(yaxis_tickformat=".0%", coloraxis_showscale=False)
             st.plotly_chart(fig_prod, use_container_width=True)
@@ -314,13 +314,13 @@ with tab1:
                     "Active Member": "#2F5496",
                     "Non-Active Member": "#C00000",
                 },
-                labels={"churn_rate": "Churn Rate", "status": "Status Keaktifan"},
+                labels={"churn_rate": "Churn Rate", "status": "Activity Status"},
             )
             fig_active.update_layout(yaxis_tickformat=".0%", showlegend=False)
             st.plotly_chart(fig_active, use_container_width=True)
 
         with col4:
-            st.subheader("Churn Rate per Negara")
+            st.subheader("Churn Rate by Country")
             country_churn = (
                 filtered_df.groupby("country")["churn"]
                 .mean()
@@ -334,12 +334,12 @@ with tab1:
                 text_auto=".1%",
                 color="churn_rate",
                 color_continuous_scale="Blues",
-                labels={"country": "Negara", "churn_rate": "Churn Rate"},
+                labels={"country": "Country", "churn_rate": "Churn Rate"},
             )
             fig_country.update_layout(yaxis_tickformat=".0%", coloraxis_showscale=False)
             st.plotly_chart(fig_country, use_container_width=True)
 
-        st.subheader("Saldo vs Estimasi Gaji (berwarna berdasarkan status Churn)")
+        st.subheader("Balance vs Estimated Salary (colored by Churn status)")
         scatter_df = filtered_df.sample(min(2000, len(filtered_df)), random_state=42).copy()
         scatter_df["status"] = scatter_df["churn"].map({0: "Non-Churn", 1: "Churn"})
 
@@ -350,16 +350,16 @@ with tab1:
             color="status",
             opacity=0.6,
             color_discrete_map={"Non-Churn": "#2F5496", "Churn": "#C00000"},
-            labels={"estimated_salary": "Estimasi Gaji", "balance": "Saldo", "status": "Status"},
+            labels={"estimated_salary": "Estimated Salary", "balance": "Balance", "status": "Status"},
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
 
 
 # ============================================================================
-# TAB 2 — PREDIKSI NASABAH & ANALISIS SHAP
+# TAB 2 — CUSTOMER PREDICTION & SHAP ANALYSIS
 # ============================================================================
 with tab2:
-    st.subheader("Masukkan Data Nasabah Baru")
+    st.subheader("Enter New Customer Data")
 
     with st.form("prediction_form"):
         fc1, fc2, fc3 = st.columns(3)
@@ -373,24 +373,24 @@ with tab2:
             )
 
         with fc2:
-            in_tenure = st.number_input("Tenure (tahun)", min_value=0, max_value=15, value=5)
+            in_tenure = st.number_input("Tenure (years)", min_value=0, max_value=15, value=5)
             in_balance = st.number_input(
                 "Balance", min_value=0.0, value=75000.0, step=1000.0, format="%.2f"
             )
-            in_products = st.selectbox("Jumlah Produk", options=[1, 2, 3, 4])
+            in_products = st.selectbox("Number of Products", options=[1, 2, 3, 4])
             in_salary = st.number_input(
                 "Estimated Salary", min_value=0.0, value=100000.0, step=1000.0, format="%.2f"
             )
 
         with fc3:
             in_credit_card = st.selectbox(
-                "Punya Kartu Kredit?", options=[1, 0], format_func=lambda x: "Ya" if x == 1 else "Tidak"
+                "Has Credit Card?", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No"
             )
             in_active = st.selectbox(
-                "Active Member?", options=[1, 0], format_func=lambda x: "Ya" if x == 1 else "Tidak"
+                "Active Member?", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No"
             )
 
-        submitted = st.form_submit_button("🔮 Prediksi Churn", use_container_width=True)
+        submitted = st.form_submit_button("🔮 Predict Churn", use_container_width=True)
 
     if submitted:
         raw_input = {
@@ -416,11 +416,11 @@ with tab2:
         res_col1, res_col2 = st.columns([1, 2])
 
         with res_col1:
-            st.metric("Probabilitas Churn", f"{proba_churn:.1%}")
+            st.metric("Churn Probability", f"{proba_churn:.1%}")
             if pred_label == "CHURN":
-                st.error(f"⚠️ Prediksi: **{pred_label}** — nasabah berisiko tinggi meninggalkan bank.")
+                st.error(f"⚠️ Prediction: **{pred_label}** — customer is at high risk of leaving the bank.")
             else:
-                st.success(f"✅ Prediksi: **{pred_label}** — nasabah cenderung bertahan.")
+                st.success(f"✅ Prediction: **{pred_label}** — customer is likely to stay.")
 
             fig_gauge = go.Figure(
                 go.Indicator(
@@ -447,7 +447,7 @@ with tab2:
             st.plotly_chart(fig_gauge, use_container_width=True)
 
         with res_col2:
-            st.markdown("#### Kontribusi Fitur terhadap Prediksi (SHAP)")
+            st.markdown("#### Feature Contribution to Prediction (SHAP)")
             try:
                 explainer = get_explainer(pipeline, df)
                 shap_df = compute_shap_contribution(pipeline, explainer, X_input)
@@ -461,19 +461,19 @@ with tab2:
                     color="shap_value",
                     color_continuous_scale=["#2F5496", "#F2F2F2", "#C00000"],
                     color_continuous_midpoint=0,
-                    labels={"shap_value": "Kontribusi SHAP", "feature": "Fitur"},
+                    labels={"shap_value": "SHAP Contribution", "feature": "Feature"},
                 )
                 fig_shap.update_layout(coloraxis_showscale=False, height=420)
                 st.plotly_chart(fig_shap, use_container_width=True)
                 st.caption(
-                    "🔴 Merah mendorong prediksi ke arah **CHURN**, "
-                    "🔵 biru mendorong prediksi ke arah **NON-CHURN**."
+                    "🔴 Red pushes the prediction toward **CHURN**, "
+                    "🔵 blue pushes the prediction toward **NON-CHURN**."
                 )
             except Exception as e:
                 st.info(
-                    "Analisis SHAP tidak tersedia untuk model ini "
-                    f"({model_name}). Detail: {e}"
+                    "SHAP analysis is not available for this model "
+                    f"({model_name}). Details: {e}"
                 )
 
-        with st.expander("Lihat data fitur hasil rekayasa (engineered features)"):
+        with st.expander("View engineered features data"):
             st.dataframe(X_input.T.rename(columns={0: "value"}), use_container_width=True)
