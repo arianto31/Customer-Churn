@@ -2,6 +2,9 @@
 
 An end-to-end machine learning project for predicting customer churn in the banking industry. This project covers the complete data science workflow—from exploratory data analysis (EDA), data preprocessing, feature engineering, model development, hyperparameter tuning, model interpretation, to deployment using Streamlit for real-time customer churn prediction.
 
+🌐 **Streamlit Dashboard:**  
+https://bank-customer-churn-project.streamlit.app/
+
 ---
 
 ## 📖 Project Overview
@@ -254,6 +257,9 @@ SHAP enables both global and individual prediction explanations.
 
 # 🌐 Streamlit Dashboard
 
+🔗 **Live Application:**  
+https://bank-customer-churn-project.streamlit.app/
+
 The project includes an interactive Streamlit application for real-time prediction.
 
 ### Dashboard Features
@@ -306,6 +312,10 @@ streamlit run app.py
 ```
 
 The application will open automatically in your browser.
+
+### Or Try the Live Demo
+
+🌐 https://bank-customer-churn-project.streamlit.app/
 
 ---
 
